@@ -1,6 +1,6 @@
-# Getting Started with Create React App
+# Presidents Card Game | Client | React App
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+This is the client implementation of your favorite card game.
 
 ## Available Scripts
 
