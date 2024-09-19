@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Presidents Card Game",
+  "name": "Presidents Card Game Online Multiplayer",
   "icons": [
     {
       "src": "favicon.ico",
