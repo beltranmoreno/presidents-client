@@ -1,10 +1,11 @@
 import React from "react";
 
 const CopyButton = ({ copied, onClick, text = "Copy" }) => {
+ 
   return (
     <button
       onClick={onClick}
-      className="flex items-center bg-blue-500 text-white w-32 px-4 py-3 rounded-lg hover:bg-blue-600 transition"
+      className="flex items-center bg-transparent text-blue-600 hover:bg-blue-100 w-32 px-4 py-3 rounded-lg transition outline outline-2"
       aria-label="Copy game code"
     >
       {copied ? (

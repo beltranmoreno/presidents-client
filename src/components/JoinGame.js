@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import socket from "../socket";
-import { setSelectionRange } from "@testing-library/user-event/dist/utils";
 
 const JoinGame = () => {
   const [name, setName] = useState("");
@@ -28,6 +27,7 @@ const JoinGame = () => {
         // Store playerName and gameCode in localStorage or context
         sessionStorage.setItem("playerName", name);
         sessionStorage.setItem("gameCode", gameCode);
+        sessionStorage.setItem("playerId", response.playerId);
         navigate("/game");
       }
     });

@@ -29,6 +29,7 @@ const CreateGame = () => {
         // Store playerName and gameCode in localStorage or context
         sessionStorage.setItem("playerName", name);
         sessionStorage.setItem("gameCode", response.gameCode);
+        sessionStorage.setItem("playerId", response.playerId);
         navigate("/game");
       }
     });

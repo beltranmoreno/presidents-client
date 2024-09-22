@@ -7,6 +7,7 @@ import Player from "./players/Player";
 import CopyButton from "./buttons/CopyButton";
 import GameOverScreen from "./GameOverScreen";
 import NavBar from "./nav/NavBar";
+import SetSize from "./cards/SetSize";
 
 const Game = () => {
   const [gameState, setGameState] = useState(null);
@@ -15,10 +16,13 @@ const Game = () => {
   const [playError, setPlayError] = useState({ error: false, message: "" });
   const [connectionError, setConnectionError] = useState({
     error: false,
-    message: "",
+    message: "Connected",
+    conStatus: "connected"
   });
   const [message, setMessage] = useState("");
   const [finalStandings, setFinalStandings] = useState([]);
+  const [setSize, setSetSize] = useState(0);
+  const [playerSkipped, setPlayerSkipped] = useState("");
   const playerName = sessionStorage.getItem("playerName");
   const gameCode = sessionStorage.getItem("gameCode");
   const navigate = useNavigate();
@@ -45,13 +49,20 @@ const Game = () => {
     });
 
     socket.on("gameState", (state) => {
+      console.log("state", state);
       setGameState(state);
+      setSetSize(state.lastPlayedCards.length);
+      setConnectionError({
+        error: false,
+        message: "Connected",
+        conStatus: "connected"
+      })
     });
 
     // Listen for playerSkipped event
     socket.on("playerSkipped", (data) => {
-      console.log(data.message);
       setMessage(data.message);
+      setPlayerSkipped(data.skippedPlayer);
 
       // Clear the message after a few seconds
       setTimeout(() => setMessage(""), 5000);
@@ -62,11 +73,12 @@ const Game = () => {
     });
 
     socket.on("connect_error", (err) => {
-      setConnectionError({ error: true, message: err.message });
+      setConnectionError({ error: true, message: err.message, conStatus: "Error" });
       console.error("Connection error:", err.message);
     });
 
     socket.on("disconnect", () => {
+      setConnectionError({ error: true, message: "Disconnected", conStatus: "Error" });
       console.warn("Disconnected from server");
     });
 
@@ -104,7 +116,7 @@ const Game = () => {
       socket.off("gameEnd");
       socket.off("error");
     };
-  }, [playerName, gameCode, navigate]);
+  }, [playerName, gameCode, setSize, navigate]);
 
   // Function to handle card selection
   const toggleCardSelection = (index) => {
@@ -194,20 +206,20 @@ const Game = () => {
   // If the game hasn't started yet
   if (!gameState.gameStarted) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-        <CopyButton
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100 space-y-4">
+         <h2 className="text-2xl font-semibold text-center mb-6">Waiting for players to join...</h2>
+         <CopyButton
           copied={copied}
           onClick={handleCopyGameCode}
           text={gameCode}
         ></CopyButton>
-        <h3 className="text-lg mb-4">Waiting for players to join...</h3>
         <p>
           Players Connected: {gameState.numPlayersConnected} /{" "}
           {gameState.numPlayersExpected}
         </p>
         <ul className="mt-4">
           {gameState.players.map((player, idx) => (
-            <Player key={idx} player={player}></Player>
+            <Player key={idx} player={player} iAmPlayer={playerName === player.name}></Player>
           ))}
         </ul>
       </div>
@@ -232,63 +244,71 @@ const Game = () => {
     onClick: handleCopyGameCode,
     text: gameCode,
   };
-
-  console.log('button', copyButton);
-
+  
   return (
     <>
-      <NavBar copyButton={copyButton}></NavBar>
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
+      <NavBar copyButton={copyButton} connectionStatus={connectionError}></NavBar>
+      <div className="flex items-start justify-center min-h-screen bg-gray-100">
         <div
           id="content"
-          className="max-w-4xl flex flex-col justify-center items-center my-8 mx-2"
+          className="max-w-4xl w-full flex flex-col justify-start items-center my-2 mx-2"
         >
-          <div className="mb-4 w-full">
-            <div className="flex ">
+          {/* Display other players */}
+          <div className="mb-4 w-full ">
+            <div className="flex flex-wrap sm:flex sm:flex-nowrap">
               {gameState.players.map((p, idx) => (
-                <Player key={idx} player={p}></Player>
+                <Player
+                  key={idx}
+                  player={p}
+                  currentPlayer={gameState.currentPlayer === p.name}
+                  iAmPlayer={playerName === p.name}
+                  playerSkipped={playerSkipped === p.name}
+                  gameStarted={gameState.gameStarted}
+                ></Player>
               ))}
             </div>
           </div>
 
-          <h2 className="text-xl font-bold mb-4">Player: {playerName}</h2>
-          <CopyButton
+          {/* <CopyButton
             copied={copied}
             onClick={handleCopyGameCode}
             text={gameCode}
-          ></CopyButton>
+          ></CopyButton> */}
 
-          {/* Display other players */}
-
-          {/* Display the last played cards */}
-          <div className="mb-4">
-            {/* <h3 className="text-lg font-semibold">Last Played Cards:</h3> */}
-            {gameState.lastPlayedCards &&
-            gameState.lastPlayedCards.length > 0 ? (
-              <div className="flex flex-wrap">
-                {gameState.lastPlayedCards.map((card, idx) => (
-                  <Card
-                    key={idx}
-                    rank={card.rank}
-                    suit={card.suit}
-                    selected={false}
-                    onClick={() => {}}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col justify-center h-28 border rounded-lg m-1 bg-white px-4">
-                <p>No cards have been played yet.</p>
-              </div>
-            )}
+          <div className="w-full sm:grid sm:grid-cols-2 sm:gap-4 my-4 mx-4 border rounded-lg">
+            {/* Display the last played cards */}
+            <div className="my-8 flex justify-center">
+              {/* <h3 className="text-lg font-semibold">Last Played Cards:</h3> */}
+              {gameState.lastPlayedCards &&
+              gameState.lastPlayedCards.length > 0 ? (
+                <div className="flex flex-wrap">
+                  {gameState.lastPlayedCards.map((card, idx) => (
+                    <Card
+                      key={idx}
+                      rank={card.rank}
+                      suit={card.suit}
+                      selected={false}
+                      onClick={() => {}}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="flex justify-center items-center h-28 border rounded-lg m-1 bg-white px-4">
+                  <p>No cards have been played yet.</p>
+                </div>
+              )}
+            </div>
+            <div className="my-8 flex justify-center">
+              <SetSize setSize={setSize}></SetSize>
+            </div>
           </div>
 
           {/* Display player's hand */}
-          <div className="mb-4">
+          <div className="my-4 flex justify-start w-full">
             {player.hand && player.hand.length > 0 ? (
               <div>
-                <h3 className="text-lg font-semibold">Your Hand:</h3>
-                <div className="flex flex-wrap">
+                {/* <h3 className="text-lg font-semibold px-">Your Hand:</h3> */}
+                <div className="flex flex-wrap -space-x-4">
                   {player.hand.map((card, index) => (
                     <Card
                       key={index}
@@ -317,9 +337,13 @@ const Game = () => {
           )}
 
           {/* Display error message if move was invalid*/}
-          {playError && playError.error && (
-            <div className="mb-4 px-4 py-2 bg-red-200 text-red-800 rounded">
+          {playError && playError.error ? (
+            <div className="mb-4 px-4 sm:h-12 flex items-center bg-red-200 text-red-800 rounded">
               <p>{playError.message}</p>
+            </div>
+          ) : (
+            <div className="mb-4 sm:h-12  ">
+              
             </div>
           )}
 
@@ -344,7 +368,7 @@ const Game = () => {
               </button>
             </div>
           ) : (
-            <p className="mb-4 text-lg">
+            <p className="mb-4 text-lg px-6 py-3">
               Waiting for{" "}
               <span className="font-semibold">{gameState.currentPlayer}</span>{" "}
               to make a move.
@@ -353,7 +377,7 @@ const Game = () => {
 
           {/* Display other game information */}
           {/* Display all played cards */}
-          <div className="mb-4">
+          {/* <div className="mb-4">
             <h3 className="text-lg font-semibold">All Played Cards:</h3>
             {gameState.playedCards && gameState.playedCards.length > 0 ? (
               <div className="flex flex-wrap">
@@ -370,7 +394,7 @@ const Game = () => {
             ) : (
               <p>No cards have been played yet.</p>
             )}
-          </div>
+          </div> */}
 
           {/* Connection Error */}
           {connectionError && connectionError.error && (

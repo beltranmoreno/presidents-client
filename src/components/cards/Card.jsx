@@ -35,8 +35,8 @@ const Card = ({ rank, suit, selected, onClick }) => {
   return (
     <div
       onClick={onClick}
-      className={`relative flex flex-col justify-between w-20 h-28 border rounded-lg m-1 cursor-pointer bg-white shadow ${
-        selected ? 'border-blue-500 border-2' : 'border-gray-300'
+      className={`relative flex flex-col justify-between w-20 h-28 border rounded-lg m-1 cursor-pointer bg-white shadow transition-transform duration-200 ${
+        selected ? 'border-blue-500 border-2 transform -translate-y-1' : 'border-gray-300'
       }`}
     >
       {/* Top Left Corner */}
